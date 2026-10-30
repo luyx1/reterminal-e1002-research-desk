@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Desk / 7.5-inch E-Paper</title>
+<style>
+:root { --paper:#f6f4ec; --ink:#222522; --muted:#70746d; --line:#d9d9d0; --red:#a74b3a; --blue:#3f7094; --green:#407a67; --ochre:#9b7839; }
+* { box-sizing:border-box; }
+html,body { margin:0; background:#dfded6; font-family:Arial,"Noto Sans SC","Microsoft YaHei",sans-serif; color:var(--ink); }
+.shell { min-height:100vh; display:flex; align-items:center; flex-direction:column; justify-content:center; gap:17px; padding:20px 12px; }
+#device { width:800px; height:480px; flex:none; background:var(--paper); position:relative; overflow:hidden; box-shadow:0 5px 30px #0002; }
+.screen { position:absolute; inset:0; background:var(--paper); display:flex; flex-direction:column; padding:8px 13px 8px; }
+.hidden { display:none!important; }
+.topbar { height:40px; flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.head-left { display:flex; flex-direction:row; align-items:baseline; gap:10px; min-width:0; }
+.head-name { font-size:28px; font-weight:800; color:var(--red); letter-spacing:.4px; line-height:30px; }
+.head-name .head-sub { font-size:19px; font-weight:750; color:#5f625d; letter-spacing:.3px; padding-left:8px; }
+.head-micro { font-size:14px; letter-spacing:.7px; font-weight:600; color:#6e7069; line-height:15px; }
+.head-right { display:flex; gap:16px; align-items:baseline; white-space:nowrap; }
+.env-group { display:flex; align-items:baseline; gap:6px; }
+.env-divider { font-size:24px; font-weight:700; color:#a0a49d; padding:0 2px; }
+.env-val { font-size:27px; line-height:29px; letter-spacing:-.4px; font-weight:800; }
+.env-temp { color:#a45d36; }
+.env-rh { color:#3f7795; }
+.env-label { text-transform:uppercase; font-size:18px; font-weight:700; color:#7c8077; letter-spacing:.5px; }
+.env-label.env-temp { color:#a45d36; }
+.env-label.env-rh { color:#3f7795; }
+.header-rule { height:2px; flex:none; background:var(--red); margin-bottom:0; }
+.paper-list { min-height:0; flex:1; overflow:hidden; }
+.paper-row { display:grid; grid-template-columns:34px minmax(0,1fr); column-gap:8px; width:100%; padding:0 1px 0 0; border-bottom:1px solid var(--line); align-items:start; }
+.paper-no { font-size:15px; color:var(--red); font-weight:800; line-height:24px; font-variant-numeric:tabular-nums; letter-spacing:.1px; }
+.paper-title { font-size:19px; line-height:24px; font-weight:600; color:#232623; overflow-wrap:anywhere; hyphens:none; letter-spacing:-.15px; }
+#measure { position:absolute; left:-10000px; top:0; visibility:hidden; }
+/* V6 AI screen: content-driven vertical rhythm, large readable figures; no cards */
+.token-topbar { height:40px; }
+.token-topbar .head-name { color:var(--blue); font-size:29px; line-height:31px; }
+.token-topbar .head-sub { font-size:19px; letter-spacing:0; padding-left:12px; }
+.token-rule { background:var(--blue); }
+.token-body { flex:1; min-height:0; padding:2px 0 0; display:flex; flex-direction:column; gap:0; }
+.service-strip { background:transparent; border:0; padding:0; flex:none; display:flex; flex-direction:column; }
+.codex-strip { height:202px; border-bottom:2px solid #bec7ca; }
+.go-strip { flex:1; min-height:0; }
+.service-heading { height:62px; flex:none; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.service-title-group { display:flex; align-items:baseline; gap:10px; min-width:0; }
+.service-name { font-size:29px; font-weight:850; line-height:33px; color:#316e96; letter-spacing:-.5px; white-space:nowrap; }
+.go-strip .service-name { color:#95743a; }
+.service-model { font-size:15px; font-weight:650; color:#75766c; white-space:nowrap; }
+.token-hero { display:flex; align-items:baseline; gap:24px; white-space:nowrap; }
+.hero-item {display:flex; align-items:baseline; gap:7px;}
+.hero-item .hero-label {font-size:17px;color:#60645e;font-weight:750;}
+.hero-item strong {font-size:36px;font-weight:850;line-height:38px;letter-spacing:-.9px;color:#1e2628;font-variant-numeric:tabular-nums;}
+.hero-item.week strong {font-size:27px;color:#3f4a49;letter-spacing:-.4px;}
+.quota-list { flex:1; min-height:0; display:flex; flex-direction:column; justify-content:space-evenly; }
+.quota-row { height:45px; display:grid; grid-template-columns:78px minmax(0,1fr) 205px; column-gap:13px; align-items:center; }
+.quota-name {font-size:19px;font-weight:800;color:#383e3c;white-space:nowrap;}
+.quota-track {height:15px;background:#dce0de;overflow:hidden;position:relative;}
+.quota-used {height:100%;background:#4e85a4;}
+.go-strip .quota-used {background:#a48750;}
+.quota-meta {font-variant-numeric:tabular-nums;white-space:nowrap;line-height:16px;text-align:right;}
+.quota-numbers {font-size:19px;font-weight:800;color:#39413d;}
+.quota-reset {font-size:15px;font-weight:650;color:#858780;display:block;line-height:18px;}
+.token-breakdown { height:50px; flex:none; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:center; border-top:1px solid #cbd0c9; }
+.token-metric {display:flex;align-items:baseline;gap:8px;padding-left:10px;min-width:0;border-left:1px solid #d4d9d2;line-height:28px;}
+.token-metric:first-child {padding-left:0;border-left:0;}
+.token-metric span {font-size:17px;font-weight:750;color:#69706d;}
+.token-metric strong {font-size:26px;line-height:28px;font-weight:850;color:#252b29;letter-spacing:-.4px;font-variant-numeric:tabular-nums;}
+.controls { width:800px; display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:16px; }
+.controls .note { color:#575b56; line-height:1.5; }
+.controls button { appearance:none; border:1px solid #9a9f98; background:#f8f8f4; color:#333; font:inherit; padding:9px 14px; cursor:pointer; border-radius:4px; }
+.controls button:hover { background:#fff; }
+.controls .controls-actions { display:flex; align-items:center; gap:7px; white-space:nowrap; }
+.controls button.primary { border-color:#407a67; background:#407a67; color:#fff; }
+.controls button:disabled { opacity:.55; cursor:wait; }
+button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
+@media (max-width:830px) { .shell { align-items:flex-start; overflow:auto; } }
+@media print { html,body {background:#fff;} .shell {padding:0;} .controls {display:none;} #device {box-shadow:none;} }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div id="device" aria-label="7.5英寸墨水屏800乘480界面预览">
+    <section class="screen" id="feed-screen">
+      <header class="topbar">
+        <div class="head-left">
+          <div class="head-name">ZOTERO <span class="head-sub" id="feed-count">· TODAY 0</span></div>
+        </div>
+        <div class="head-right">
+          <div class="env-group"><span class="env-label env-temp">INDOOR TEMP.:</span><span class="env-val env-temp" id="temperature">N/A</span></div>
+          <span class="env-divider">|</span>
+          <div class="env-group"><span class="env-label env-rh">REL. HUMIDITY:</span><span class="env-val env-rh" id="humidity">N/A</span></div>
+        </div>
+      </header>
+      <div class="header-rule"></div>
+      <main class="paper-list" id="paper-list"></main>
+    </section>
+    <section class="screen hidden" id="token-screen">
+      <header class="topbar token-topbar">
+        <div class="head-left"><div class="head-name">AI <span class="head-sub">额度 &amp; Token 用量</span></div></div>
+      </header>
+      <div class="header-rule token-rule"></div>
+      <div class="token-body">
+        <section class="service-strip codex-strip" aria-label="Codex 额度与Token用量">
+          <div class="service-heading">
+            <div class="service-title-group"><div class="service-name">CODEX</div></div>
+            <div class="token-hero">
+              <div class="hero-item"><span class="hero-label">今日</span><strong id="codex-today">N/A</strong></div>
+              <div class="hero-item week"><span class="hero-label">7 天</span><strong id="codex-week">N/A</strong></div>
+            </div>
+          </div>
+          <div class="quota-list" id="codex-quota"></div>
+          <div class="token-breakdown" id="codex-tokens"></div>
+        </section>
+        <section class="service-strip go-strip" aria-label="OpenCode Go额度与OpenCode Token用量">
+          <div class="service-heading">
+            <div class="service-title-group"><div class="service-name">OPENCODE</div><div class="service-model" id="go-model">GO · N/A</div></div>
+            <div class="token-hero">
+              <div class="hero-item"><span class="hero-label">今日</span><strong id="opencode-today">N/A</strong></div>
+              <div class="hero-item week"><span class="hero-label">7 天</span><strong id="opencode-week">N/A</strong></div>
+            </div>
+          </div>
+          <div class="quota-list" id="go-quota"></div>
+          <div class="token-breakdown" id="opencode-tokens"></div>
+        </section>
+      </div>
+    </section>
+    <div id="measure" aria-hidden="true"></div>
+  </div>
+  <div class="controls">
+    <span class="note" id="action-status">800 × 480 · 本机实时数据 · 每 5 分钟轮换</span>
+    <div class="controls-actions"><button class="primary" id="refresh-btn">刷新数据并写屏</button><button id="prev-btn">← 上一页</button><button id="next-btn">下一页 →</button></div>
+  </div>
+</div>
+<script>
+'use strict';
+const REFRESH_MS = 5 * 60 * 1000;
+// Synthetic figures are isolated in demo-data.json and only load with ?demo=1.
+const EMPTY_DATA = {updatedAt:null,environment:{temperatureC:null,humidityPct:null},rss:{items:[]},tokens:{codex:{today:null,week:null,input:null,output:null,cacheRead:null,quotas:[]},opencode:{today:null,week:null,input:null,output:null,cacheRead:null},go:{model:null,quotas:[]}}};
+const IS_DEMO = new URLSearchParams(location.search).get('demo') === '1';
+let data = EMPTY_DATA;
+let paperPages = [];
+let sequence = [];
+let active = 0;
+const $ = selector => document.querySelector(selector);
+const $$ = selector => [...document.querySelectorAll(selector)];
+function shortTokens(num) { if (!Number.isFinite(num)) return 'N/A'; if (Math.abs(num)>=1e6) return (num/1e6).toFixed(2).replace(/\.00$/,'')+'M'; if (Math.abs(num)>=1e3) return Math.round(num/1e3)+'K'; return String(num); }
+function formatDate(iso){ const d = new Date(iso); return Number.isNaN(d.getTime()) ? 'UNAVAILABLE' : d.toLocaleDateString('en-US',{timeZone:'Asia/Shanghai',month:'short',day:'numeric',year:'numeric'}).toUpperCase(); }
+function formatTime(iso){ const d = new Date(iso); return Number.isNaN(d.getTime()) ? '--:--' : d.toLocaleTimeString('en-GB',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'}); }
+function paperRow(p,index){
+  const r=document.createElement('div'); r.className='paper-row';
+  const n=document.createElement('span'); n.className='paper-no'; n.textContent=String(index+1).padStart(2,'0');
+  const t=document.createElement('div'); t.className='paper-title'; t.textContent=p.title||'Untitled';
+  r.append(n,t); return r;
+}
+function paginatePapers(){
+  const list=$('#paper-list'); const measure=$('#measure');
+  measure.replaceChildren(); measure.style.width=list.clientWidth+'px';
+  const limit=list.clientHeight; const items=(data.rss?.items||[]).filter(p=>p&&p.title);
+  if(!items.length){paperPages=[[]];return;}
+  // Browser layout is the source of truth: full titles and real CSS line-wrap heights.
+  const heights=items.map((paper,index)=>{
+    const r=paperRow(paper,index);measure.append(r);
+    return Math.ceil(r.getBoundingClientRect().height);
+  });
+  const n=heights.length;
+  const prefix=[0];heights.forEach(h=>prefix.push(prefix[prefix.length-1]+h));
+  // Determine the minimum feasible number of pages, then balance page heights.
+  const minPages=new Array(n+1).fill(Infinity);minPages[0]=0;
+  for(let i=1;i<=n;i++) for(let j=i-1;j>=0;j--){
+    if(prefix[i]-prefix[j]>limit)break;
+    minPages[i]=Math.min(minPages[i],minPages[j]+1);
+  }
+  const count=Number.isFinite(minPages[n])?minPages[n]:n;
+  const dp=Array.from({length:count+1},()=>new Array(n+1).fill(Infinity));
+  const prev=Array.from({length:count+1},()=>new Array(n+1).fill(-1));
+  dp[0][0]=0;
+  const ideal=prefix[n]/count;
+  for(let k=1;k<=count;k++)for(let i=k;i<=n;i++)for(let j=k-1;j<i;j++){
+    const h=prefix[i]-prefix[j];if(h>limit)continue;
+    const candidate=dp[k-1][j]+Math.pow(h-ideal,2);
+    if(candidate<dp[k][i]){dp[k][i]=candidate;prev[k][i]=j;}
+  }
+  const boundaries=[n];let pos=n;
+  for(let k=count;k>0;k--){const j=prev[k][pos];if(j<0)break;boundaries.push(j);pos=j;}
+  boundaries.reverse();
+  const pages=[];
+  for(let k=0;k<boundaries.length-1;k++){
+    const page=[];for(let i=boundaries[k];i<boundaries[k+1];i++)page.push({paper:items[i],index:i});
+    pages.push(page);
+  }
+  paperPages=pages.length?pages:[items.map((paper,index)=>({paper,index}))];
+}
+function fillFeeds(){
+  $('#feed-count').textContent='· TODAY '+(data.rss?.items?.length||0);
+  $('#temperature').textContent=typeof data.environment?.temperatureC==='number' && Number.isFinite(data.environment.temperatureC) ? data.environment.temperatureC.toFixed(1)+'°C':'N/A';
+  $('#humidity').textContent=typeof data.environment?.humidityPct==='number' && Number.isFinite(data.environment.humidityPct) ? Math.round(data.environment.humidityPct)+'%':'N/A';
+  paginatePapers();
+}
+function formatPercent(n){ return typeof n==='number'&&Number.isFinite(n) ? Math.max(0,Math.min(100,n)) : null; }
+function renderQuota(target,quotas){
+  const el=$(target);el.replaceChildren();
+  (quotas||[]).forEach(q=>{
+    const row=document.createElement('div'); row.className='quota-row';
+    const lab=document.createElement('span');lab.className='quota-name';lab.textContent=q.label||'--';
+    const track=document.createElement('div');track.className='quota-track';
+    const bar=document.createElement('div');bar.className='quota-used';
+    const used=formatPercent(q.usedPercent);bar.style.width=used===null?'0%':used+'%';track.append(bar);
+    const meta=document.createElement('div');meta.className='quota-meta';
+    const nums=document.createElement('div');nums.className='quota-numbers';nums.textContent=used===null?'额度 N/A':`已用 ${used}%  ·  剩 ${100-used}%`;
+    const reset=document.createElement('span');reset.className='quota-reset';reset.textContent=q.resetLabel||'重置时间未知';
+    meta.append(nums,reset);row.append(lab,track,meta);el.append(row);
+  });
+}
+function renderTokenDetails(target,t){
+  const el=$(target);el.replaceChildren();
+  [['输入',t?.input],['输出',t?.output],['缓存',t?.cacheRead]].forEach(([label,num])=>{
+    const item=document.createElement('div'),s=document.createElement('span'),v=document.createElement('strong');
+    item.className='token-metric';s.textContent=label;v.textContent=shortTokens(num);item.append(s,v);el.append(item);
+  });
+}
+function fillTokens(){
+  const t=data.tokens||{};
+  const codex=t.codex||{},opencode=t.opencode||{};
+  $('#codex-today').textContent=shortTokens(codex.today);
+  $('#codex-week').textContent=shortTokens(codex.week);
+  $('#opencode-today').textContent=shortTokens(opencode.today);
+  $('#opencode-week').textContent=shortTokens(opencode.week);
+  $('#go-model').textContent='GO · '+(t.go?.model||'N/A');
+  renderQuota('#codex-quota',codex.quotas);
+  renderQuota('#go-quota',t.go?.quotas);
+  renderTokenDetails('#codex-tokens',codex);
+  renderTokenDetails('#opencode-tokens',opencode);
+}
+function rebuild(){
+  fillFeeds(); fillTokens();
+  sequence=[...paperPages.map((_,index)=>({type:'rss',index})),{type:'token'}];
+  if (active >= sequence.length) active=0;
+  draw();
+}
+function draw(){
+  const step=sequence[active] || {type:'rss',index:0};
+  $('#feed-screen').classList.toggle('hidden',step.type!=='rss');
+  $('#token-screen').classList.toggle('hidden',step.type!=='token');
+  if (step.type==='rss'){
+    const list=$('#paper-list');list.replaceChildren();
+    const entries=paperPages[step.index]||[];
+    entries.forEach(({paper,index})=>list.append(paperRow(paper,index)));
+    if(!entries.length){const empty=document.createElement('p');empty.className='paper-title';empty.textContent='今天没有新发现的订阅文章。';list.append(empty);}
+  }
+}
+function next(){active=(active+1)%sequence.length;draw();}
+function previous(){active=(active-1+sequence.length)%sequence.length;draw();}
+function selectUploadedFrame(frame){
+ if(frame==='ai_token_page.png')active=sequence.length-1;
+ else{const match=/page(\d+)\.png$/.exec(frame||'');if(match)active=Math.min(Number(match[1])-1,sequence.length-2);}
+ draw();
+}
+async function reload(){
+  try { const response=await fetch(IS_DEMO?'./demo-data.json':'./data.json',{cache:'no-store'}); if(response.ok){const raw=await response.json();if(raw&&raw.rss&&raw.tokens)data=raw;} }
+  catch(_){ /* Keep the last real frame; file:// shows N/A until served over HTTP. */ }
+}
+async function manualAction(action){
+ const buttons=$$('.controls button');buttons.forEach(button=>button.disabled=true);
+ const status=$('#action-status');
+ status.textContent=action==='refresh'?'正在刷新数据并写入当前页…':'正在切换并写入屏幕…';
+ try{
+  if(action==='refresh'&&IS_DEMO){await reload();rebuild();draw();status.textContent='模拟数据已重新载入';return;}
+  const response=await fetch('./api/'+action,{method:'POST',cache:'no-store'});
+  const result=await response.json().catch(()=>({}));
+  if(action==='refresh'){
+   if(!response.ok)throw new Error(result.error||'刷新失败');
+   await reload();rebuild();if(result.frame)selectUploadedFrame(result.frame);else draw();
+   status.textContent=result.frame?'数据已更新并写入 '+result.frame:'数据已更新；设备屏幕服务未启用';
+  }else if(response.ok){
+   selectUploadedFrame(result.frame);
+   status.textContent='已切换并写入 '+(result.frame||'E1002');
+  }else if(response.status===409){
+   action==='next'?next():previous();
+   status.textContent='浏览器预览已切换；E1002 写屏服务未启用';
+  }else throw new Error(result.error||'屏幕切换失败');
+ }catch(error){
+  if(action==='next')next();else if(action==='previous')previous();
+  const localService=location.protocol.startsWith('http:')&&['localhost','127.0.0.1','::1'].includes(location.hostname);
+  if(!localService){
+   status.textContent=action==='refresh'
+    ?'静态预览无法连接本机数据服务；请打开 http://127.0.0.1:8000/research_desk.html'
+    :'预览已切换；静态预览无法连接本机写屏服务；请打开 http://127.0.0.1:8000/research_desk.html';
+  }else{
+   status.textContent=(action==='refresh'?'本机请求无响应；设备状态未确认：':'预览已切换；写屏状态未确认：')+(error.message||'连接错误');
+  }
+ }finally{buttons.forEach(button=>button.disabled=false);}
+}
+function initialSelection(){
+  const params=new URLSearchParams(location.search);
+  if(params.get('preview')==='token') active=sequence.length-1;
+  else if(params.get('preview')==='feed')active=Math.min(Math.max(0,Number(params.get('page')||1)-1),sequence.length-2);
+}
+(async()=>{
+ await reload();rebuild();initialSelection();draw();
+ $('#next-btn').addEventListener('click',()=>manualAction('next'));$('#prev-btn').addEventListener('click',()=>manualAction('previous'));
+ $('#refresh-btn').addEventListener('click',()=>manualAction('refresh'));
+ if(IS_DEMO) $('.controls .note').textContent='800 × 480 · 模拟数据（仅用于布局预览）· 每 5 分钟轮换';
+ window.addEventListener('keydown',event=>{ if(event.key==='ArrowRight'||event.key==='ArrowDown')manualAction('next');if(event.key==='ArrowLeft'||event.key==='ArrowUp')manualAction('previous');if(event.key.toLowerCase()==='r')manualAction('refresh'); });
+ if(new URLSearchParams(location.search).get('pause')!=='1') setInterval(async()=>{ await reload();const prev=active;rebuild();active=(prev+1)%sequence.length;draw();},REFRESH_MS);
+ window.addEventListener('resize',()=>rebuild());
+ window.__researchDesk={get pages(){return paperPages.map(x=>x.length);},get active(){return sequence[active];},next,previous};
+})();
+</script>
+</body>
+</html>

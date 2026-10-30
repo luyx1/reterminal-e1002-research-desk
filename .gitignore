@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Private state and secrets
+.state/
+*.key
+*.env
+.env.*
+
+# Generated/private data
+data.json
+*.png
+*.sqlite3
+*.sqlite3-*
+*.log
+*.tmp
+logs/
+
+# Private device config exports
+e1002-config-*.json

@@ -1,0 +1,16 @@
+{
+  "patch_only": true,
+  "target_device": "Seeed reTerminal E1002",
+  "packet": {
+    "id": "4",
+    "name": "power_option",
+    "fields": {
+      "power_mode": "2"
+    }
+  },
+  "meaning": {
+    "power_mode": "USB"
+  },
+  "merge_instruction": "Change only packets[id=4].fields.power_mode in the exported configuration. Preserve every other existing packet and field, including Wi-Fi credentials and board pin assignments.",
+  "note": "This is a one-field patch, not a complete importable device configuration. USB mode selects external power; it does not physically disconnect the built-in battery."
+}

@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>E1002 USB reset</title>
+<body style="font:16px system-ui;max-width:600px;margin:48px auto;padding:0 20px;color:#111">
+<h1>reTerminal E1002 · USB 复位</h1>
+<p>只对 WCH CH340 USB 串口的 DTR 线做一次短脉冲，不发送数据、不刷写固件、不改配置。</p>
+<button id="reset" style="font:inherit;padding:12px 18px">连接 USB 串口并重启</button>
+<pre id="status">等待操作</pre>
+<script>
+const status = document.querySelector('#status');
+document.querySelector('#reset').addEventListener('click', async () => {
+  let port;
+  try {
+    port = await navigator.serial.requestPort({filters:[{usbVendorId:0x1a86, usbProductId:0x7523}]});
+    await port.open({baudRate:115200});
+    await port.setSignals({dataTerminalReady:false});
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await port.setSignals({dataTerminalReady:true});
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await port.close();
+    status.textContent = 'DTR 脉冲已完成。请等待设备重新启动。';
+  } catch (error) {
+    status.textContent = `${error.name}: ${error.message}`;
+    if (port?.readable || port?.writable) { try { await port.close(); } catch {} }
+  }
+});
+</script>

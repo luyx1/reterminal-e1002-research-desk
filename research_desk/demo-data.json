@@ -1,0 +1,201 @@
+{
+  "demo": true,
+  "updatedAt": "2026-10-30T17:10:00+08:00",
+  "environment": {
+    "temperatureC": 24.6,
+    "humidityPct": 53
+  },
+  "rss": {
+    "date": "2026-10-30",
+    "items": [
+      {
+        "id": "paper-01",
+        "title": "Hydrodynamic Analysis of Floating Offshore Structures under Irregular Wave Conditions",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-02",
+        "title": "Experimental Investigation of Wave-Induced Motions of a Semi-Submersible Floating Platform",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-03",
+        "title": "Numerical Study on Added Mass and Radiation Damping of Floating Bodies in Waves with a Detailed Comparison between Experimental Measurements and Boundary-Element Simulations",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-04",
+        "title": "Wave-Structure Interaction of Multiple Floating Platforms in a Confined Coastal Region",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-05",
+        "title": "Frequency-Domain Prediction of Six-Degree-of-Freedom Responses in Random Seas",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-06",
+        "title": "Effects of Mooring Stiffness on the Dynamic Response of a Floating Offshore System",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-07",
+        "title": "Computational Modelling of Hydrodynamic Interactions between Closely Spaced Floating Bodies",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-08",
+        "title": "Experimental and Numerical Analysis of Floating Breakwater Performance under Directional Waves",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-09",
+        "title": "Resonance Characteristics and Motion Responses of Multi-Body Floating Systems",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-10",
+        "title": "Potential Flow Method for Wave Excitation Loads on Offshore Floating Structures",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-11",
+        "title": "Assessment of Response Amplitude Operators for Floating Bodies in Shallow Water with Varying Water Depth, Wave Directionality and Mooring-System Stiffness",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-12",
+        "title": "Hydrodynamic Performance of Semi-Submersible Floating Offshore Wind Turbine Platforms",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-13",
+        "title": "Validation of Numerical Models for Floating Structures under Extreme Sea States",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-14",
+        "title": "Influence of Viscous Damping on Floating Body Motion in Regular and Irregular Waves",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-15",
+        "title": "Coupled Dynamic Analysis of Floating Offshore Structures with Flexible Mooring Connections",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-16",
+        "title": "Wave Excitation Forces and Motion Responses of Floating Structures near a Vertical Wall",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-17",
+        "title": "Nonlinear Wave Effects on the Dynamic Behaviour of Floating Platforms",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-18",
+        "title": "Numerical Simulation of Floating Structures in Directional Random Seas",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-19",
+        "title": "Comparison of Frequency-Domain and Time-Domain Hydrodynamic Response Predictions",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-20",
+        "title": "Experimental Investigation of Wave Interactions in Arrays of Modular Floating Structures",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-21",
+        "title": "Dynamic Performance of a Floating System with Multiple Mooring Configurations",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-22",
+        "title": "Hydrodynamic Characteristics of Floating Bodies in Shallow and Intermediate Water",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-23",
+        "title": "Motion Response of Floating Offshore Platforms under Different Wave Spectra",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-24",
+        "title": "Numerical Assessment of Radiation Forces for Offshore Floating Systems",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-25",
+        "title": "Interaction between Regular Waves and an Articulated Floating Bridge with Flexible Connections",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-26",
+        "title": "Experimental Measurement of Wave Drift Forces on a Floating Platform",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-27",
+        "title": "Wave Energy Dissipation and Motion Reduction of Connected Floating Modules",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      },
+      {
+        "id": "paper-28",
+        "title": "Model-Based Prediction of Pitch, Roll and Heave Responses in Irregular Waves",
+        "firstSeen": "2026-10-30T09:00:00+08:00"
+      }
+    ]
+  },
+  "tokens": {
+    "codex": {
+      "today": 1380000,
+      "week": 9450000,
+      "input": 220000,
+      "output": 120000,
+      "cacheRead": 1040000,
+      "quotas": [
+        {
+          "label": "5 小时",
+          "usedPercent": 28,
+          "resetLabel": "18:00 重置"
+        },
+        {
+          "label": "每周",
+          "usedPercent": 61,
+          "resetLabel": "11月02日重置"
+        }
+      ]
+    },
+    "opencode": {
+      "today": 2450000,
+      "week": 15600000,
+      "input": 570000,
+      "output": 180000,
+      "cacheRead": 1700000
+    },
+    "go": {
+      "model": "GLM-5.3-Flash",
+      "quotas": [
+        {
+          "label": "5 小时",
+          "usedPercent": 34,
+          "resetLabel": "19:40 重置"
+        },
+        {
+          "label": "每周",
+          "usedPercent": 46,
+          "resetLabel": "11月03日重置"
+        },
+        {
+          "label": "每月",
+          "usedPercent": 57,
+          "resetLabel": "11月15日重置"
+        }
+      ]
+    }
+  }
+}

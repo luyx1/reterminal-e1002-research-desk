@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+<rect width="800" height="480" fill="#FFFFFF"/>
+<g font-family="STHeiti, PingFang SC, sans-serif">
+  <text x="44" y="21" dominant-baseline="hanging" font-size="14" fill="#171717">E1002  /  STILL NOTE</text>
+  <text x="626" y="21" dominant-baseline="hanging" font-size="14" fill="#416A98">SLOW DESIGN     01</text>
+  <path d="M44 51H756" stroke="#171717" stroke-width="2"/>
+  <text x="44" y="99" dominant-baseline="hanging" font-size="58" fill="#171717">把今天</text>
+  <text x="44" y="169" dominant-baseline="hanging" font-size="58" fill="#171717">还给自己。</text>
+  <rect x="44" y="268" width="35" height="6" rx="3" fill="#DF4938"/>
+  <text x="44" y="292" dominant-baseline="hanging" font-size="23" fill="#416A98">慢一点，注意力会回来。</text>
+  <text x="44" y="333" dominant-baseline="hanging" font-size="16" fill="#171717">一页给呼吸留白的桌面风景</text>
+  <path d="M63 389H306" stroke="#171717" stroke-width="2"/>
+  <circle cx="62" cy="389" r="11" fill="#DF4938" stroke="#171717"/>
+  <circle cx="184" cy="389" r="11" fill="#F3CA4C" stroke="#171717"/>
+  <circle cx="306" cy="389" r="11" fill="#416A98" stroke="#171717"/>
+  <text x="42" y="408" dominant-baseline="hanging" font-size="15" fill="#171717">吸气</text>
+  <text x="164" y="408" dominant-baseline="hanging" font-size="15" fill="#171717">停一停</text>
+  <text x="286" y="408" dominant-baseline="hanging" font-size="15" fill="#171717">呼气</text>
+  <rect x="444" y="82" width="312" height="323" rx="16" fill="#FFFFFF" stroke="#171717" stroke-width="2"/>
+  <text x="463" y="99" dominant-baseline="hanging" font-size="14" fill="#171717">PAUSE  /  01</text>
+  <circle cx="728" cy="106" r="12" fill="#DF4938"/>
+  <text x="721" y="98" dominant-baseline="hanging" font-size="13" fill="#FFFFFF">停</text>
+  <circle cx="612" cy="202" r="63" fill="#F3CA4C" stroke="#DF4938" stroke-width="3"/>
+  <path d="M445 287 488 265 524 284 565 249 604 276 652 253 756 291V337H445Z" fill="#4D7956"/>
+  <path d="M445 310 493 300 542 317 589 297 638 315 685 296 756 307V359H445Z" fill="#416A98"/>
+  <path d="M445 337 493 326 537 343 588 325 636 343 684 326 756 341V366H445Z" fill="#4D7956"/>
+  <path d="M459 310H742" stroke="#DF4938" stroke-width="2"/>
+  <path d="M503 189q17-15 34 0m-27 5q17-15 34 0" fill="none" stroke="#171717" stroke-width="2"/>
+  <path d="M463 377H737" stroke="#171717"/>
+  <text x="463" y="383" dominant-baseline="hanging" font-size="16" fill="#416A98">离开噪声  /  回到此刻</text>
+  <path d="M44 444H756" stroke="#171717"/>
+  <text x="44" y="451" dominant-baseline="hanging" font-size="14" fill="#171717">给此刻一格留白</text>
+  <text x="667" y="451" dominant-baseline="hanging" font-size="14" fill="#416A98">800 × 480</text>
+</g></svg>
