@@ -84,8 +84,10 @@ button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
       <header class="topbar">
         <div class="head-left">
           <div class="head-name">ZOTERO <span class="head-sub" id="feed-count">· TODAY 0</span></div>
+          <span class="head-micro" id="feed-page">PAGE 1/1</span>
         </div>
         <div class="head-right">
+          <span class="head-micro" id="updated-at">更新 --:--</span>
           <div class="env-group"><span class="env-label env-temp">INDOOR TEMP.:</span><span class="env-val env-temp" id="temperature">N/A</span></div>
           <span class="env-divider">|</span>
           <div class="env-group"><span class="env-label env-rh">REL. HUMIDITY:</span><span class="env-val env-rh" id="humidity">N/A</span></div>
@@ -194,6 +196,8 @@ function fillFeeds(){
   $('#feed-count').textContent='· TODAY '+(data.rss?.items?.length||0);
   $('#temperature').textContent=typeof data.environment?.temperatureC==='number' && Number.isFinite(data.environment.temperatureC) ? data.environment.temperatureC.toFixed(1)+'°C':'N/A';
   $('#humidity').textContent=typeof data.environment?.humidityPct==='number' && Number.isFinite(data.environment.humidityPct) ? Math.round(data.environment.humidityPct)+'%':'N/A';
+  const updated=data.updatedAt?formatTime(data.updatedAt):'--:--';
+  $('#updated-at').textContent='更新 '+updated;
   paginatePapers();
 }
 function formatPercent(n){ return typeof n==='number'&&Number.isFinite(n) ? Math.max(0,Math.min(100,n)) : null; }
@@ -246,6 +250,10 @@ function draw(){
     const entries=paperPages[step.index]||[];
     entries.forEach(({paper,index})=>list.append(paperRow(paper,index)));
     if(!entries.length){const empty=document.createElement('p');empty.className='paper-title';empty.textContent='今天没有新发现的订阅文章。';list.append(empty);}
+    const total=Math.max(1,paperPages.length);
+    $('#feed-page').textContent='PAGE '+(step.index+1)+'/'+total;
+  } else {
+    $('#feed-page').textContent='AI PAGE';
   }
 }
 function next(){active=(active+1)%sequence.length;draw();}

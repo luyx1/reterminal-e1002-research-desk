@@ -674,7 +674,10 @@ def opencode_go_limits() -> tuple[list[dict[str, Any]], str]:
         if reset is not None:
             try:
                 reset_dt = datetime.fromtimestamp(float(reset) / 1000, TZ)
-                reset_label = reset_dt.strftime("%-m月%-d日 %H:%M") + " 重置"
+                if reset_dt.date() == now_local().date():
+                    reset_label = reset_dt.strftime("%H:%M") + " 重置"
+                else:
+                    reset_label = reset_dt.strftime("%-m月%-d日 %H:%M") + " 重置"
             except (TypeError, ValueError, OSError, OverflowError):
                 reset_label = "重置时间 N/A"
         else:
