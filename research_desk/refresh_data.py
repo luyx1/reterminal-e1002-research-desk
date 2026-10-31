@@ -52,6 +52,103 @@ def opencode_api_key() -> str | None:
     except OSError:
         return None
 
+
+OPENCODE_CONSOLE_BASE = "https://opencode.ai"
+
+
+def _opencode_console_json(path: str, params: dict[str, str] | None = None) -> Any:
+    """Read account-level Console data with the local service API key."""
+    key = opencode_api_key()
+    if not key:
+        raise RuntimeError("OpenCode API key unavailable")
+    url = OPENCODE_CONSOLE_BASE + path
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": "Bearer " + key,
+            "Accept": "application/json",
+            # Cloudflare rejects the default Python-urllib signature (HTTP 403).
+            "User-Agent": "curl/8.7.1",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=15) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _as_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def opencode_account_usage(now: datetime) -> tuple[dict[str, Any], str]:
+    """Read account-wide OpenCode token totals from the Console usage API.
+
+    The Console daily export uses UTC days, but the dashboard is local-time.
+    ``since`` lets us request the local day explicitly, matching the number a
+    user sees for "today" in their own timezone.
+    """
+    empty = {"today": None, "week": None, "total": None,
+             "input": None, "output": None, "cacheRead": None, "cacheWrite": None,
+             "requests": None}
+    try:
+        daily = _opencode_console_json("/console/api/usage/cost-by-day", {"range": "all"})
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError):
+        daily = None
+
+    local_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    since = local_start.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        today_summary = _opencode_console_json("/console/api/usage/summary", {"since": since})
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError):
+        today_summary = None
+
+    rows: list[tuple[date, int]] = []
+    if isinstance(daily, list):
+        for row in daily:
+            if not isinstance(row, dict):
+                continue
+            try:
+                day = date.fromisoformat(str(row.get("date") or ""))
+            except ValueError:
+                continue
+            rows.append((day, _as_int(row.get("totalTokens"))))
+    if not rows and not isinstance(today_summary, dict):
+        return empty, "OpenCode account usage unavailable"
+
+    utc_today = now.astimezone(timezone.utc).date()
+    week_start = utc_today - timedelta(days=6)
+    total = sum(tokens for _, tokens in rows) if rows else None
+    week = sum(tokens for day, tokens in rows if week_start <= day <= utc_today) if rows else None
+
+    if isinstance(today_summary, dict):
+        input_tokens = _as_int(today_summary.get("totalInputTokens"))
+        output_tokens = _as_int(today_summary.get("totalOutputTokens"))
+        cache_read = _as_int(today_summary.get("totalCacheReadTokens"))
+        cache_write = _as_int(today_summary.get("totalCacheWrite5mTokens")) + _as_int(today_summary.get("totalCacheWrite1hTokens"))
+        today = input_tokens + output_tokens + cache_read + cache_write
+        requests = _as_int(today_summary.get("totalRequests"))
+    else:
+        input_tokens = output_tokens = cache_read = cache_write = None
+        today = next((tokens for day, tokens in rows if day == utc_today), None)
+        requests = None
+
+    return {
+        "today": today,
+        "week": week,
+        "total": total,
+        "input": input_tokens,
+        "output": output_tokens,
+        "cacheRead": cache_read,
+        "cacheWrite": cache_write,
+        "requests": requests,
+        "date": now.date().isoformat(),
+    }, "ok"
+
+
 MAX_FEED_BYTES = 5 * 1024 * 1024
 RSS_TIMEOUT_SECONDS = 8
 DOI_RE = re.compile(r"10\.\d{4,9}/[^\s<>\"']+", re.I)
@@ -849,16 +946,10 @@ def collect(sample_sensor: bool = True, sync_rss: bool | None = None) -> dict[st
         if not codex_quotas:
             codex_quotas = [{"label": "额度", "usedPercent": None, "resetLabel": "Codex 限额不可读"}]
         opencode, opencode_status = opencode_metrics(now)
+        opencode_account, opencode_account_status = opencode_account_usage(now)
         go_quotas, go_status = opencode_go_limits()
         environment, sensor_status = sample_environment(db) if sample_sensor else cached_environment(db)
         rss_items = today_articles(db, now)
-        open_data = opencode.get("data") or {}
-        open_week = open_data.get("weekBreakdown") or {}
-        opencode_token_data = {
-            "today": open_data.get("today"), "week": open_data.get("week"),
-            "input": open_data.get("input"), "output": open_data.get("output"),
-            "cacheRead": open_data.get("cacheRead"), "cacheWrite": open_week.get("cacheRead"),
-        }
         payload = {
             "updatedAt": now.isoformat(timespec="seconds"),
             "timezone": str(TZ),
@@ -869,13 +960,14 @@ def collect(sample_sensor: bool = True, sync_rss: bool | None = None) -> dict[st
                           "today": codex_usage["today"]["total"],
                           "weekInput": codex_usage["week"]["input"], "weekOutput": codex_usage["week"]["output"],
                           "weekCacheRead": codex_usage["week"]["cacheRead"], "quotas": codex_quotas},
-                "opencode": opencode_token_data,
+                "opencode": opencode_account,
                 "go": {"model": opencode.get("goModel"), "quotas": go_quotas},
             },
             "sources": {
                 "zotero": rss_status,
                 "codex": {**codex_status, "quota": codex_quota_status},
-                "opencode": {"status": opencode_status, "assistantMessages7d": opencode.get("messages", 0), "goQuota": go_status},
+                "opencode": {"status": opencode_status, "accountUsage": opencode_account_status,
+                             "assistantMessages7d": opencode.get("messages", 0), "goQuota": go_status},
                 "environment": sensor_status,
             },
         }
@@ -905,7 +997,8 @@ def main() -> int:
     print("Research Desk data refreshed")
     print(f"Zotero: {len(payload['rss']['items'])} today / {sources['zotero'].get('feeds', 0)} feeds / {sources['zotero'].get('failed', 0)} failed")
     print(f"Codex: {payload['tokens']['codex']['today']} today / {payload['tokens']['codex']['week']} rolling 7d; quota {sources['codex']['quota']}")
-    print(f"OpenCode: {payload['tokens']['opencode']['today']} today / {payload['tokens']['opencode']['week']} rolling 7d; Go quota {sources['opencode']['goQuota']}")
+    print(f"OpenCode: {payload['tokens']['opencode']['today']} today / {payload['tokens']['opencode']['total']} total; "
+          f"account usage {sources['opencode']['accountUsage']}; Go quota {sources['opencode']['goQuota']}")
     env = payload["environment"]
     if env["temperatureC"] is None:
         print(f"E1002 SHT40: N/A ({sources['environment']})")

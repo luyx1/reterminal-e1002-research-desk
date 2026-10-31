@@ -65,20 +65,23 @@ launchctl bootout gui/501/com.researchdesk.screen
 
 - **Zotero Feeds**：只读本机 `~/Zotero/zotero.sqlite` 的 13 个 Feeds 订阅和缓存条目，然后抓取订阅的 RSS/Atom。按 DOI、GUID、规范化 URL 去重；保留原始发布时间与首次发现时间。默认按 `first_seen` 选“今天”，也可设置 `RESEARCH_DESK_RSS_TODAY_BASIS=published`。网络失败时保留本地 SQLite 缓存的上次数据。订阅 URL 不会写进页面 JSON 或日志。
 - **Codex**：用 Codex CLI 的 `account/rateLimits/read` 本地协议读取实际 5 小时/每周额度；Token 统计从 `~/.codex` 的 `token_usage_record` 逐次响应记录读取，按 response ID 去重。今日按 `Asia/Shanghai` 本地零点，7 天为滚动 168 小时。统计本机 Codex 活动，不代表账户所有设备的 Token 总和。
-- **OpenCode**：从 `~/.local/share/opencode/opencode.db` 的 assistant 消息读取真实 Token，按用户本地今日和滚动 168 小时汇总，包含 Go 与免费模型。Cache 统计为缓存读加写；Input、Output、Cache 来自独立字段，不反推额度。
-- **OpenCode Go 额度**：通过 `opencode api get /api/experimental/usage/limits` 请求 OpenCode 本地服务，复用 OpenCode Console 登录，不需要单独的 Go API Key。解析服务返回的 `data.go.rolling/weekly/monthly` 窗口和重置时间。OpenCode CLI 通过绝对路径和可用的 PATH 解析，避免后台服务因 PATH 缺少 `/opt/homebrew/bin` 而无法读取额度。
+- **OpenCode 账号 Token**：通过 OpenCode Console 的账号级 Usage API 汇总，`today` 使用本地零点（`Asia/Shanghai`）到当前时刻，`total` 使用全部可用日汇总。总量包含 Input、Output、Cache Read、Cache Write；这与 OpenCode 网页端“账号用量”一致，不是本机 CLI 的记录。需要具有 `usage:read` 权限的 Service API Key，放在 `.state/opencode_api_key`（`0600`，已 gitignore）或 `RESEARCH_DESK_OPENCODE_API_KEY`。
+- **OpenCode Go 额度**：优先用同一个 Service API Key 请求 `https://opencode.ai/zen/go/v1/usage`，读取 `usage.rolling/weekly/monthly` 的百分比与重置时间；失败时回退到 `opencode api get /api/experimental/usage/limits` 的本地 Console 登录态。OpenCode CLI 通过绝对路径和可用的 PATH 解析，避免后台服务因 PATH 缺少 `/opt/homebrew/bin` 而无法读取额度。
 - **E1002 温湿度**：通过 BLE 被动读取 E1002 的 SHT40 广播，不建立 BLE 会话，也不走 USB。需要系统蓝牙权限与 `bleak`。读数会本地保留；扫描暂不可用时显示上次成功读数，没有读数则显示 `N/A`。
 
 ## 当前数据缺口
 
-这台机器近 7 天的 OpenCode 记录包含 Beam Free / Iceman Free 模型；OpenCode Go 额度从 Console 登录状态读取，Go 配额条按滚动 5 小时、每周、每月窗口显示。Go 模型标签显示最近一次使用的 `opencode-go` 模型。额度从 OpenCode Console 登录状态读取；不需要创建或保存单独的 Go API Key。
+OpenCode 账号用量与 Go 额度都需要本机保存的 Service API Key；如果 Key 失效或没有 `usage:read` 权限，页面会显示 `N/A`，不会用本机 CLI 的数字替代账号数字。Go 配额条按滚动 5 小时、每周、每月窗口显示，模型标签显示最近一次本地使用的 `opencode-go` 模型。
+
+当天 Zotero 没有文章时，RSS 页不生成、也不参与轮换，屏幕只显示 AI 页。
 
 当前 BLE 传感器是否可读取决于 E1002 正在广播且 macOS 允许 Python 使用蓝牙。可以运行 `refresh_data.py` 查看只包含读取状态的结果；扫描器不会打印 BLE 地址或原始广播内容。
 
 ## 本地文件与安全
 
 - `.state/research_desk.sqlite3`：首次发现记录、Codex 去重游标、传感器最近读数；目录权限为 `0700`，数据库为 `0600`。
-- `data.json`：供页面读取的聚合显示数据，不包含账户凭据或 RSS URL。
+- `.state/opencode_api_key`：OpenCode Console Service API Key，权限 `0600`，已被 gitignore；不会写入 `data.json` 或提交到仓库。
+- `data.json`：供页面读取的聚合显示数据，不包含账户凭据、邮箱或 RSS URL。
 - `demo-data.json`：仅供视觉预览的示例数据。默认生产页面不会加载。
 - `server.py` 只提供页面、JSON 与演示 JSON，不会暴露状态数据库或配置文件；默认绑定 `127.0.0.1`。
 
@@ -87,6 +90,7 @@ launchctl bootout gui/501/com.researchdesk.screen
 ```text
 RESEARCH_DESK_ZOTERO_DB
 RESEARCH_DESK_OPENCODE_DB
+RESEARCH_DESK_OPENCODE_API_KEY  (OpenCode Console Service API Key；也可写入 .state/opencode_api_key)
 RESEARCH_DESK_TIMEZONE=Asia/Shanghai
 RESEARCH_DESK_RSS_TODAY_BASIS=first_seen|published
 RESEARCH_DESK_DISPLAY_NAME  (E1002 设备名；也可写入 .state/display_name；缺失时 BLE 设备相关功能自动禁用)

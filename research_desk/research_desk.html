@@ -111,12 +111,12 @@ button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
           <div class="quota-list" id="codex-quota"></div>
           <div class="token-breakdown" id="codex-tokens"></div>
         </section>
-        <section class="service-strip go-strip" aria-label="OpenCode Go额度与本机Token用量">
+        <section class="service-strip go-strip" aria-label="OpenCode Go额度与账号Token用量">
           <div class="service-heading">
             <div class="service-title-group"><div class="service-name">OPENCODE</div><div class="service-model" id="go-model">GO · N/A</div></div>
             <div class="token-hero">
-              <div class="hero-item"><span class="hero-label">本机今日</span><strong id="opencode-today">N/A</strong></div>
-              <div class="hero-item week"><span class="hero-label">本机7天</span><strong id="opencode-week">N/A</strong></div>
+              <div class="hero-item"><span class="hero-label">账号今日</span><strong id="opencode-today">N/A</strong></div>
+              <div class="hero-item week"><span class="hero-label">账号总计</span><strong id="opencode-total">N/A</strong></div>
             </div>
           </div>
           <div class="quota-list" id="go-quota"></div>
@@ -135,7 +135,7 @@ button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
 'use strict';
 const REFRESH_MS = 5 * 60 * 1000;
 // Synthetic figures are isolated in demo-data.json and only load with ?demo=1.
-const EMPTY_DATA = {updatedAt:null,environment:{temperatureC:null,humidityPct:null},rss:{items:[]},tokens:{codex:{today:null,week:null,input:null,output:null,cacheRead:null,quotas:[]},opencode:{today:null,week:null,input:null,output:null,cacheRead:null},go:{model:null,quotas:[]}}};
+const EMPTY_DATA = {updatedAt:null,environment:{temperatureC:null,humidityPct:null},rss:{items:[]},tokens:{codex:{today:null,week:null,input:null,output:null,cacheRead:null,quotas:[]},opencode:{today:null,total:null,input:null,output:null,cacheRead:null},go:{model:null,quotas:[]}}};
 const IS_DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let data = EMPTY_DATA;
 let paperPages = [];
@@ -156,7 +156,7 @@ function paginatePapers(){
   const list=$('#paper-list'); const measure=$('#measure');
   measure.replaceChildren(); measure.style.width=list.clientWidth+'px';
   const limit=list.clientHeight; const items=(data.rss?.items||[]).filter(p=>p&&p.title);
-  if(!items.length){paperPages=[[]];return;}
+  if(!items.length){paperPages=[];return;}
   // Browser layout is the source of truth: full titles and real CSS line-wrap heights.
   const heights=items.map((paper,index)=>{
     const r=paperRow(paper,index);measure.append(r);
@@ -224,7 +224,7 @@ function fillTokens(){
   $('#codex-today').textContent=shortTokens(codex.today);
   $('#codex-week').textContent=shortTokens(codex.week);
   $('#opencode-today').textContent=shortTokens(opencode.today);
-  $('#opencode-week').textContent=shortTokens(opencode.week);
+  $('#opencode-total').textContent=shortTokens(opencode.total);
   $('#go-model').textContent='GO · '+(t.go?.model||'N/A');
   renderQuota('#codex-quota',codex.quotas);
   renderQuota('#go-quota',t.go?.quotas);

@@ -54,6 +54,7 @@ class PreviewHandler(BaseHTTPRequestHandler):
 async def main():
     for old in BASE.glob("zotero_rss_page*.png"):
         old.unlink()
+    (BASE / "preview_side_by_side.png").unlink(missing_ok=True)
     http = ThreadingHTTPServer(("127.0.0.1", 0), PreviewHandler)
     threading.Thread(target=http.serve_forever, daemon=True).start()
     address = f"http://127.0.0.1:{http.server_port}"
@@ -66,7 +67,7 @@ async def main():
             page = await browser.new_page(viewport={"width": 920, "height": 640}, device_scale_factor=1)
             page.on("pageerror", lambda error: errors.append(str(error)))
             await page.goto(address + "/research_desk.html?pause=1", wait_until="load")
-            await page.wait_for_function("window.__researchDesk && window.__researchDesk.pages.length")
+            await page.wait_for_function("window.__researchDesk && Array.isArray(window.__researchDesk.pages)")
             pages = await page.evaluate("window.__researchDesk.pages")
             print("actual RSS page row counts:", pages)
             for index, row_count in enumerate(pages):
@@ -105,12 +106,13 @@ async def main():
     for output in outputs:
         with Image.open(output) as image:
             assert image.size == (800, 480), (output.name, image.size)
-    with Image.new("RGB", (1600, 480), "#f6f4ec") as preview:
-        with Image.open(outputs[0]) as feed, Image.open(BASE / "ai_token_page.png") as ai:
-            preview.paste(feed.convert("RGB"), (0, 0))
-            preview.paste(ai.convert("RGB"), (800, 0))
-        preview.save(BASE / "preview_side_by_side.png")
-    print(f"Rendered {len(outputs)} native 800x480 PNGs")
+    if pages:
+        with Image.new("RGB", (1600, 480), "#f6f4ec") as preview:
+            with Image.open(outputs[0]) as feed, Image.open(BASE / "ai_token_page.png") as ai:
+                preview.paste(feed.convert("RGB"), (0, 0))
+                preview.paste(ai.convert("RGB"), (800, 0))
+            preview.save(BASE / "preview_side_by_side.png")
+    print(f"Rendered {len(outputs)} native 800x480 PNGs" + (" (no RSS pages)" if not pages else ""))
 
 
 if __name__ == "__main__":
