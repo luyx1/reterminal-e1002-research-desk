@@ -64,7 +64,7 @@ launchctl bootout gui/501/com.researchdesk.screen
 ## 已接入的数据源
 
 - **Zotero Feeds**：只读本机 `~/Zotero/zotero.sqlite` 的 13 个 Feeds 订阅和缓存条目，然后抓取订阅的 RSS/Atom。按 DOI、GUID、规范化 URL 去重；保留原始发布时间与首次发现时间。默认按 `first_seen` 选“今天”，也可设置 `RESEARCH_DESK_RSS_TODAY_BASIS=published`。网络失败时保留本地 SQLite 缓存的上次数据。订阅 URL 不会写进页面 JSON 或日志。
-- **Codex**：用 Codex CLI 的 `account/rateLimits/read` 本地协议读取实际 5 小时/每周额度；Token 统计从 `~/.codex` 的 `token_usage_record` 逐次响应记录读取，按 response ID 去重。今日按 `Asia/Shanghai` 本地零点，7 天为滚动 168 小时。统计本机 Codex 活动，不代表账户所有设备的 Token 总和。
+- **Codex 账号 Token**：通过 Codex App Server 的官方 `account/usage/read` 读取 ChatGPT 账号累计 Token、每日 Token 桶、峰值日与连续天数。`today` 使用 API 返回的当日桶，`total` 为 `lifetimeTokens`；该接口不提供 Input/Output/Cache 拆分，因此明细显示为峰值/连续天数。额度仍通过 `account/rateLimits/read` 读取。
 - **OpenCode 账号 Token**：通过 OpenCode Console 的账号级 Usage API 汇总，`today` 使用本地零点（`Asia/Shanghai`）到当前时刻，`total` 使用全部可用日汇总。总量包含 Input、Output、Cache Read、Cache Write；这与 OpenCode 网页端“账号用量”一致，不是本机 CLI 的记录。需要具有 `usage:read` 权限的 Service API Key，放在 `.state/opencode_api_key`（`0600`，已 gitignore）或 `RESEARCH_DESK_OPENCODE_API_KEY`。
 - **OpenCode Go 额度**：优先用同一个 Service API Key 请求 `https://opencode.ai/zen/go/v1/usage`，读取 `usage.rolling/weekly/monthly` 的百分比与重置时间；失败时回退到 `opencode api get /api/experimental/usage/limits` 的本地 Console 登录态。OpenCode CLI 通过绝对路径和可用的 PATH 解析，避免后台服务因 PATH 缺少 `/opt/homebrew/bin` 而无法读取额度。
 - **E1002 温湿度**：通过 BLE 被动读取 E1002 的 SHT40 广播，不建立 BLE 会话，也不走 USB。需要系统蓝牙权限与 `bleak`。读数会本地保留；扫描暂不可用时显示上次成功读数，没有读数则显示 `N/A`。
@@ -72,6 +72,8 @@ launchctl bootout gui/501/com.researchdesk.screen
 ## 当前数据缺口
 
 OpenCode 账号用量与 Go 额度都需要本机保存的 Service API Key；如果 Key 失效或没有 `usage:read` 权限，页面会显示 `N/A`，不会用本机 CLI 的数字替代账号数字。Go 配额条按滚动 5 小时、每周、每月窗口显示，模型标签显示最近一次本地使用的 `opencode-go` 模型。
+
+Codex 账号 Token 通过官方 `account/usage/read` 获取；`today` 使用 API 返回的当日桶，因此可能随 API 更新节奏变化，`total` 为账号累计 `lifetimeTokens`。该接口不提供 Input/Output/Cache 拆分。
 
 当天 Zotero 没有文章时，RSS 页不生成、也不参与轮换，屏幕只显示 AI 页。
 

@@ -665,6 +665,121 @@ def codex_rate_limits() -> tuple[list[dict[str, Any]], str]:
                 process.kill()
 
 
+def codex_account_usage(now: datetime) -> tuple[dict[str, Any], str]:
+    """Read account-level Codex token totals from the official app-server API.
+
+    ``account/usage/read`` returns ChatGPT-account usage, including lifetime
+    tokens and daily buckets.  It is not device-local history.
+    """
+    empty = {"today": None, "total": None, "peakDaily": None,
+             "currentStreak": None, "longestStreak": None}
+    if not Path(CODEX_BIN).is_file() and not shutil.which(str(CODEX_BIN)):
+        return empty, "Codex CLI unavailable"
+
+    initialize = {"id": 1, "method": "initialize",
+                  "params": {"clientInfo": {"name": "research-desk", "version": "1.0"}}}
+    read_usage = {"id": 2, "method": "account/usage/read", "params": {}}
+    process: subprocess.Popen[str] | None = None
+    try:
+        process = subprocess.Popen([str(CODEX_BIN), "app-server", "--stdio"],
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   stderr=subprocess.DEVNULL, text=True, bufsize=1)
+        assert process.stdin and process.stdout
+
+        def send(value: dict[str, Any]) -> None:
+            process.stdin.write(json.dumps(value) + "\n")
+            process.stdin.flush()
+
+        def read_message(deadline: float) -> dict[str, Any] | None:
+            while time.monotonic() < deadline:
+                ready, _, _ = select.select([process.stdout], [], [],
+                                            max(0.05, deadline - time.monotonic()))
+                if not ready:
+                    return None
+                line = process.stdout.readline()
+                if not line:
+                    return None
+                try:
+                    return json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+            return None
+
+        send(initialize)
+        initialized = False
+        until = time.monotonic() + 10
+        while time.monotonic() < until:
+            message = read_message(until)
+            if message is None:
+                break
+            if message.get("id") == 1 and message.get("result"):
+                initialized = True
+                break
+        if not initialized:
+            return empty, "Codex app-server initialization failed"
+        send({"method": "initialized", "params": {}})
+        send(read_usage)
+        response = None
+        until = time.monotonic() + 12
+        while time.monotonic() < until:
+            value = read_message(until)
+            if value is None:
+                break
+            if value.get("id") == 2:
+                response = value.get("result") or {}
+                break
+        if not response:
+            return empty, "Codex usage response unavailable"
+
+        summary = response.get("summary") or {}
+        lifetime = _as_int(summary.get("lifetimeTokens"))
+        peak = _as_int(summary.get("peakDailyTokens"))
+        current = _as_int(summary.get("currentStreakDays"))
+        longest = _as_int(summary.get("longestStreakDays"))
+        today: int | None = None
+        week = 0
+        week_start = now.date() - timedelta(days=6)
+        for bucket in response.get("dailyUsageBuckets") or []:
+            if not isinstance(bucket, dict):
+                continue
+            start = str(bucket.get("startDate") or "")
+            tokens = _as_int(bucket.get("tokens"))
+            if start == now.date().isoformat():
+                today = tokens
+            try:
+                day = date.fromisoformat(start)
+                if week_start <= day <= now.date():
+                    week += tokens
+            except ValueError:
+                pass
+        if today is None:
+            today = 0
+        if lifetime == 0 and not (response.get("dailyUsageBuckets") or []):
+            return empty, "Codex usage fields unavailable"
+        return {
+            "today": today,
+            "total": lifetime,
+            "week": week,
+            "peakDaily": peak,
+            "currentStreak": current,
+            "longestStreak": longest,
+            "input": None,
+            "output": None,
+            "cacheRead": None,
+        }, "ok"
+    except (OSError, subprocess.SubprocessError, ValueError, json.JSONDecodeError):
+        return empty, "Codex account usage request failed"
+    finally:
+        if process:
+            try:
+                if process.stdin and not process.stdin.closed:
+                    process.stdin.write(json.dumps({"method": "exit", "params": {}}) + "\n")
+                    process.stdin.close()
+                process.wait(timeout=1)
+            except Exception:
+                process.kill()
+
+
 def opencode_metrics(now: datetime) -> tuple[dict[str, Any], str]:
     if not OPENCODE_DB.is_file():
         return {"today": None, "week": None, "input": None, "output": None, "cacheRead": None}, "OpenCode database not found"
@@ -943,6 +1058,7 @@ def collect(sample_sensor: bool = True, sync_rss: bool | None = None) -> dict[st
         codex_status = index_codex_files(db)
         codex_usage = sum_codex(db, now)
         codex_quotas, codex_quota_status = codex_rate_limits()
+        codex_account, codex_account_status = codex_account_usage(now)
         if not codex_quotas:
             codex_quotas = [{"label": "额度", "usedPercent": None, "resetLabel": "Codex 限额不可读"}]
         opencode, opencode_status = opencode_metrics(now)
@@ -956,16 +1072,22 @@ def collect(sample_sensor: bool = True, sync_rss: bool | None = None) -> dict[st
             "environment": environment,
             "rss": {"date": now.date().isoformat(), "basis": RSS_BASIS, "items": rss_items},
             "tokens": {
-                "codex": {**codex_usage["today"], "week": codex_usage["week"]["total"],
-                          "today": codex_usage["today"]["total"],
-                          "weekInput": codex_usage["week"]["input"], "weekOutput": codex_usage["week"]["output"],
-                          "weekCacheRead": codex_usage["week"]["cacheRead"], "quotas": codex_quotas},
+                "codex": {
+                    "today": codex_account.get("today"),
+                    "total": codex_account.get("total"),
+                    "week": codex_account.get("week"),
+                    "peakDaily": codex_account.get("peakDaily"),
+                    "currentStreak": codex_account.get("currentStreak"),
+                    "longestStreak": codex_account.get("longestStreak"),
+                    "quotas": codex_quotas,
+                },
                 "opencode": opencode_account,
                 "go": {"model": opencode.get("goModel"), "quotas": go_quotas},
             },
             "sources": {
                 "zotero": rss_status,
-                "codex": {**codex_status, "quota": codex_quota_status},
+                "codex": {**codex_status, "quota": codex_quota_status,
+                          "accountUsage": codex_account_status},
                 "opencode": {"status": opencode_status, "accountUsage": opencode_account_status,
                              "assistantMessages7d": opencode.get("messages", 0), "goQuota": go_status},
                 "environment": sensor_status,
@@ -996,7 +1118,8 @@ def main() -> int:
     sources = payload["sources"]
     print("Research Desk data refreshed")
     print(f"Zotero: {len(payload['rss']['items'])} today / {sources['zotero'].get('feeds', 0)} feeds / {sources['zotero'].get('failed', 0)} failed")
-    print(f"Codex: {payload['tokens']['codex']['today']} today / {payload['tokens']['codex']['week']} rolling 7d; quota {sources['codex']['quota']}")
+    print(f"Codex: {payload['tokens']['codex']['today']} today / {payload['tokens']['codex']['total']} total; "
+          f"account usage {sources['codex']['accountUsage']}; quota {sources['codex']['quota']}")
     print(f"OpenCode: {payload['tokens']['opencode']['today']} today / {payload['tokens']['opencode']['total']} total; "
           f"account usage {sources['opencode']['accountUsage']}; Go quota {sources['opencode']['goQuota']}")
     env = payload["environment"]

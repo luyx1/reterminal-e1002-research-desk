@@ -104,8 +104,8 @@ button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
           <div class="service-heading">
             <div class="service-title-group"><div class="service-name">CODEX</div></div>
             <div class="token-hero">
-              <div class="hero-item"><span class="hero-label">今日</span><strong id="codex-today">N/A</strong></div>
-              <div class="hero-item week"><span class="hero-label">7 天</span><strong id="codex-week">N/A</strong></div>
+              <div class="hero-item"><span class="hero-label">账号今日</span><strong id="codex-today">N/A</strong></div>
+              <div class="hero-item week"><span class="hero-label">账号总计</span><strong id="codex-total">N/A</strong></div>
             </div>
           </div>
           <div class="quota-list" id="codex-quota"></div>
@@ -135,7 +135,7 @@ button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
 'use strict';
 const REFRESH_MS = 5 * 60 * 1000;
 // Synthetic figures are isolated in demo-data.json and only load with ?demo=1.
-const EMPTY_DATA = {updatedAt:null,environment:{temperatureC:null,humidityPct:null},rss:{items:[]},tokens:{codex:{today:null,week:null,input:null,output:null,cacheRead:null,quotas:[]},opencode:{today:null,total:null,input:null,output:null,cacheRead:null},go:{model:null,quotas:[]}}};
+const EMPTY_DATA = {updatedAt:null,environment:{temperatureC:null,humidityPct:null},rss:{items:[]},tokens:{codex:{today:null,total:null,peakDaily:null,currentStreak:null,longestStreak:null,quotas:[]},opencode:{today:null,total:null,input:null,output:null,cacheRead:null},go:{model:null,quotas:[]}}};
 const IS_DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let data = EMPTY_DATA;
 let paperPages = [];
@@ -218,17 +218,24 @@ function renderTokenDetails(target,t){
     item.className='token-metric';s.textContent=label;v.textContent=shortTokens(num);item.append(s,v);el.append(item);
   });
 }
+function renderCodexAccountDetails(target,t){
+  const el=$(target);el.replaceChildren();
+  [['峰值日',t?.peakDaily],['连续天数',t?.currentStreak],['最长连续',t?.longestStreak]].forEach(([label,num])=>{
+    const item=document.createElement('div'),s=document.createElement('span'),v=document.createElement('strong');
+    item.className='token-metric';s.textContent=label;v.textContent=shortTokens(num);item.append(s,v);el.append(item);
+  });
+}
 function fillTokens(){
   const t=data.tokens||{};
   const codex=t.codex||{},opencode=t.opencode||{};
   $('#codex-today').textContent=shortTokens(codex.today);
-  $('#codex-week').textContent=shortTokens(codex.week);
+  $('#codex-total').textContent=shortTokens(codex.total);
   $('#opencode-today').textContent=shortTokens(opencode.today);
   $('#opencode-total').textContent=shortTokens(opencode.total);
   $('#go-model').textContent='GO · '+(t.go?.model||'N/A');
   renderQuota('#codex-quota',codex.quotas);
   renderQuota('#go-quota',t.go?.quotas);
-  renderTokenDetails('#codex-tokens',codex);
+  renderCodexAccountDetails('#codex-tokens',codex);
   renderTokenDetails('#opencode-tokens',opencode);
 }
 function rebuild(){
