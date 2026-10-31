@@ -105,7 +105,7 @@ button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
             <div class="service-title-group"><div class="service-name">CODEX</div></div>
             <div class="token-hero">
               <div class="hero-item"><span class="hero-label">账号今日</span><strong id="codex-today">N/A</strong></div>
-              <div class="hero-item week"><span class="hero-label">账号总计</span><strong id="codex-total">N/A</strong></div>
+              <div class="hero-item week"><span class="hero-label">近7天</span><strong id="codex-week">N/A</strong></div>
             </div>
           </div>
           <div class="quota-list" id="codex-quota"></div>
@@ -116,7 +116,7 @@ button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
             <div class="service-title-group"><div class="service-name">OPENCODE</div><div class="service-model" id="go-model">GO · N/A</div></div>
             <div class="token-hero">
               <div class="hero-item"><span class="hero-label">账号今日</span><strong id="opencode-today">N/A</strong></div>
-              <div class="hero-item week"><span class="hero-label">账号总计</span><strong id="opencode-total">N/A</strong></div>
+              <div class="hero-item week"><span class="hero-label">近7天</span><strong id="opencode-week">N/A</strong></div>
             </div>
           </div>
           <div class="quota-list" id="go-quota"></div>
@@ -135,7 +135,7 @@ button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
 'use strict';
 const REFRESH_MS = 5 * 60 * 1000;
 // Synthetic figures are isolated in demo-data.json and only load with ?demo=1.
-const EMPTY_DATA = {updatedAt:null,environment:{temperatureC:null,humidityPct:null},rss:{items:[]},tokens:{codex:{today:null,total:null,peakDaily:null,currentStreak:null,longestStreak:null,quotas:[]},opencode:{today:null,total:null,input:null,output:null,cacheRead:null},go:{model:null,quotas:[]}}};
+const EMPTY_DATA = {updatedAt:null,environment:{temperatureC:null,humidityPct:null},rss:{items:[]},tokens:{codex:{today:null,week:null,peakDaily:null,currentStreak:null,longestStreak:null,quotas:[]},opencode:{today:null,week:null,input:null,output:null,cacheRead:null},go:{model:null,quotas:[]}}};
 const IS_DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let data = EMPTY_DATA;
 let paperPages = [];
@@ -229,9 +229,9 @@ function fillTokens(){
   const t=data.tokens||{};
   const codex=t.codex||{},opencode=t.opencode||{};
   $('#codex-today').textContent=shortTokens(codex.today);
-  $('#codex-total').textContent=shortTokens(codex.total);
+  $('#codex-week').textContent=shortTokens(codex.week);
   $('#opencode-today').textContent=shortTokens(opencode.today);
-  $('#opencode-total').textContent=shortTokens(opencode.total);
+  $('#opencode-week').textContent=shortTokens(opencode.week);
   $('#go-model').textContent='GO · '+(t.go?.model||'N/A');
   renderQuota('#codex-quota',codex.quotas);
   renderQuota('#go-quota',t.go?.quotas);
