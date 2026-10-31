@@ -111,11 +111,16 @@ button:focus-visible { outline:2px solid #426d8c; outline-offset:2px; }
           <div class="quota-list" id="codex-quota"></div>
           <div class="token-breakdown" id="codex-tokens"></div>
         </section>
-        <section class="service-strip go-strip" aria-label="OpenCode Go额度">
+        <section class="service-strip go-strip" aria-label="OpenCode Go额度与本机Token用量">
           <div class="service-heading">
             <div class="service-title-group"><div class="service-name">OPENCODE</div><div class="service-model" id="go-model">GO · N/A</div></div>
+            <div class="token-hero">
+              <div class="hero-item"><span class="hero-label">本机今日</span><strong id="opencode-today">N/A</strong></div>
+              <div class="hero-item week"><span class="hero-label">本机7天</span><strong id="opencode-week">N/A</strong></div>
+            </div>
           </div>
           <div class="quota-list" id="go-quota"></div>
+          <div class="token-breakdown" id="opencode-tokens"></div>
         </section>
       </div>
     </section>
@@ -218,11 +223,13 @@ function fillTokens(){
   const codex=t.codex||{},opencode=t.opencode||{};
   $('#codex-today').textContent=shortTokens(codex.today);
   $('#codex-week').textContent=shortTokens(codex.week);
+  $('#opencode-today').textContent=shortTokens(opencode.today);
+  $('#opencode-week').textContent=shortTokens(opencode.week);
   $('#go-model').textContent='GO · '+(t.go?.model||'N/A');
   renderQuota('#codex-quota',codex.quotas);
   renderQuota('#go-quota',t.go?.quotas);
   renderTokenDetails('#codex-tokens',codex);
-  // OpenCode 本机 Token 不再显示，避免与网页端账号用量混淆。
+  renderTokenDetails('#opencode-tokens',opencode);
 }
 function rebuild(){
   fillFeeds(); fillTokens();
