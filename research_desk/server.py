@@ -49,8 +49,8 @@ def refresh_all(sample_sensor: bool = False) -> None:
         refresh_data.write_payload(payload)
         rss = payload["sources"]["zotero"]
         print(f"data refreshed: {len(payload['rss']['items'])} papers today; "
-              f"Codex {payload['tokens']['codex']['today']}; "
-              f"OpenCode {payload['tokens']['opencode']['today']}; "
+              f"Codex {payload['tokens']['codex']['today']}/{payload['tokens']['codex']['total']}; "
+              f"OpenCode {payload['tokens']['opencode']['today']}/{payload['tokens']['opencode']['total']}; "
               f"feeds {rss.get('failed', 0)} failed", flush=True)
 
 
