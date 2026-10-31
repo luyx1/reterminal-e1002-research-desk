@@ -40,6 +40,17 @@ OPENCODE_DB = Path(os.environ.get("RESEARCH_DESK_OPENCODE_DB", str(Path.home() /
 CODEX_HOME = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser()
 CODEX_BIN = os.environ.get("RESEARCH_DESK_CODEX_BIN") or shutil.which("codex") or "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"
 OPENCODE_BIN = os.environ.get("RESEARCH_DESK_OPENCODE_BIN") or shutil.which("opencode") or "/opt/homebrew/bin/opencode"
+OPENCODE_API_KEY_FILE = STATE_DIR / "opencode_api_key"
+
+
+def opencode_api_key() -> str | None:
+    value = os.environ.get("RESEARCH_DESK_OPENCODE_API_KEY")
+    if value:
+        return value.strip()
+    try:
+        return OPENCODE_API_KEY_FILE.read_text(encoding="utf-8").strip() or None
+    except OSError:
+        return None
 
 MAX_FEED_BYTES = 5 * 1024 * 1024
 RSS_TIMEOUT_SECONDS = 8
@@ -611,6 +622,50 @@ def opencode_go_limits() -> tuple[list[dict[str, Any]], str]:
     """Read Go limits through the authenticated OpenCode local API client."""
     missing = [{"label": label, "usedPercent": None, "resetLabel": "额度 N/A"}
                for label in ("5 小时", "每周", "每月")]
+
+    # Prefer the account-level OpenCode Go usage endpoint when an API key is available.
+    key = opencode_api_key()
+    if key:
+        try:
+            request = urllib.request.Request(
+                "https://opencode.ai/zen/go/v1/usage",
+                headers={"Authorization": "Bearer " + key, "Accept": "application/json"},
+            )
+            with urllib.request.urlopen(request, timeout=12) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            quota = payload.get("usage") if isinstance(payload, dict) else None
+            if isinstance(quota, dict):
+                rows: list[dict[str, Any]] = []
+                for name, label in (("rolling", "5 小时"), ("weekly", "每周"), ("monthly", "每月")):
+                    item = quota.get(name)
+                    if not isinstance(item, dict):
+                        continue
+                    used = item.get("percent")
+                    try:
+                        used = float(used) if used is not None else None
+                        if used is not None and not 0 <= used <= 100:
+                            used = None
+                    except (TypeError, ValueError):
+                        used = None
+                    reset = item.get("resetsAt")
+                    if reset is not None:
+                        reset_dt = parse_date(str(reset))
+                        if reset_dt is not None:
+                            if reset_dt.date() == now_local().date():
+                                reset_label = reset_dt.strftime("%H:%M") + " 重置"
+                            else:
+                                reset_label = reset_dt.strftime("%-m月%-d日 %H:%M") + " 重置"
+                        else:
+                            reset_label = "重置时间 N/A"
+                    else:
+                        reset_label = "重置时间 N/A"
+                    rows.append({"label": label, "usedPercent": used, "resetLabel": reset_label,
+                                 "limited": bool(item.get("limited"))})
+                if rows:
+                    return rows, "ok"
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError):
+            pass
+
     binary = OPENCODE_BIN
     if not binary or (not Path(binary).is_file() and not shutil.which(binary)):
         for row in missing:
