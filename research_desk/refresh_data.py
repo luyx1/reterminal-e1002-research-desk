@@ -211,7 +211,7 @@ def upsert_article(db: sqlite3.Connection, item: dict[str, Any]) -> bool:
 def read_zotero_cache(db: sqlite3.Connection) -> tuple[list[dict[str, Any]], list[tuple[int, str, str]]]:
     if not ZOTERO_DB.is_file():
         raise FileNotFoundError("Zotero database not found")
-    source = sqlite3.connect(f"file:{ZOTERO_DB}?mode=ro", uri=True, timeout=5)
+    source = sqlite3.connect(f"file:{ZOTERO_DB}?mode=ro&immutable=1", uri=True, timeout=5)
     source.row_factory = sqlite3.Row
     try:
         field_ids = {row["fieldName"]: row["fieldID"] for row in source.execute(
@@ -585,7 +585,8 @@ def opencode_metrics(now: datetime) -> tuple[dict[str, Any], str]:
                 continue
             token = obj.get("tokens") or {}
             cache = token.get("cache") or {}
-            metrics = {"input": int(token.get("input") or 0), "output": int(token.get("output") or 0),
+            metrics = {"input": int(token.get("input") or 0),
+                       "output": int(token.get("output") or 0) + int(token.get("reasoning") or 0),
                        "cacheRead": int(cache.get("read") or 0) + int(cache.get("write") or 0)}
             for period in ("today", "week"):
                 if period == "week" or ts >= today_epoch:
@@ -752,15 +753,41 @@ def cached_environment(db: sqlite3.Connection) -> tuple[dict[str, Any], str]:
     return {"temperatureC": None, "humidityPct": None, "observedAt": None}, "no sensor reading"
 
 
-def collect(sample_sensor: bool = True) -> dict[str, Any]:
+RSS_SYNC_STATE = STATE_DIR / "rss_last_sync"
+
+
+def _rss_sync_needed(now: datetime) -> bool:
+    try:
+        return RSS_SYNC_STATE.read_text(encoding="utf-8").strip() != now.date().isoformat()
+    except OSError:
+        return True
+
+
+def _mark_rss_synced(now: datetime) -> None:
+    STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    RSS_SYNC_STATE.write_text(now.date().isoformat() + "\n", encoding="utf-8")
+    try:
+        RSS_SYNC_STATE.chmod(0o600)
+    except OSError:
+        pass
+
+
+def collect(sample_sensor: bool = True, sync_rss: bool | None = None) -> dict[str, Any]:
     now = now_local()
     db = db_connect()
     try:
-        try:
-            rss_status = sync_zotero(db)
-        except (OSError, sqlite3.Error, ValueError) as exc:
-            rss_status = {"status": "stale", "feeds": 0, "cached": 0, "fetched": 0,
-                          "failed": 0, "error": type(exc).__name__}
+        if sync_rss is None:
+            sync_rss = _rss_sync_needed(now)
+        if sync_rss:
+            try:
+                rss_status = sync_zotero(db)
+            except (OSError, sqlite3.Error, ValueError) as exc:
+                rss_status = {"status": "stale", "feeds": 0, "cached": 0, "fetched": 0,
+                              "failed": 0, "error": type(exc).__name__}
+            else:
+                _mark_rss_synced(now)
+        else:
+            rss_status = {"status": "cached", "feeds": 0, "cached": 0, "fetched": 0, "failed": 0}
         codex_status = index_codex_files(db)
         codex_usage = sum_codex(db, now)
         codex_quotas, codex_quota_status = codex_rate_limits()
